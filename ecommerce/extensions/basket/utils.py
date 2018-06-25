@@ -13,12 +13,13 @@ from django.utils.translation import ugettext_lazy as _
 from oscar.core.loading import get_class, get_model
 
 from ecommerce.courses.utils import mode_for_product
+from ecommerce.extensions.offer.applicator import ProgramApplicator
 from ecommerce.extensions.order.exceptions import AlreadyPlacedOrderException
 from ecommerce.extensions.order.utils import UserAlreadyPlacedOrder
 from ecommerce.extensions.payment.utils import embargo_check
 from ecommerce.referrals.models import Referral
 
-Applicator = get_class('offer.applicator', 'Applicator')
+Applicator = ProgramApplicator
 Basket = get_model('basket', 'Basket')
 BasketAttribute = get_model('basket', 'BasketAttribute')
 BasketAttributeType = get_model('basket', 'BasketAttributeType')
