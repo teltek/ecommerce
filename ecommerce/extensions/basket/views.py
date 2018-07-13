@@ -27,13 +27,15 @@ from ecommerce.extensions.analytics.utils import (
     track_segment_event,
     translate_basket_line_for_segment
 )
-from ecommerce.extensions.basket.utils import add_utm_params_to_url, get_basket_switch_data, prepare_basket
+from ecommerce.extensions.basket.utils import BUNDLE, add_utm_params_to_url, get_basket_switch_data, prepare_basket
 from ecommerce.extensions.offer.utils import format_benefit_value, render_email_confirmation_if_required
 from ecommerce.extensions.order.exceptions import AlreadyPlacedOrderException
 from ecommerce.extensions.partner.shortcuts import get_partner_for_site
 from ecommerce.extensions.payment.constants import CLIENT_SIDE_CHECKOUT_FLAG_NAME
 from ecommerce.extensions.payment.forms import PaymentForm
 
+BasketAttribute = get_model('basket', 'BasketAttribute')
+BasketAttributeType = get_model('basket', 'BasketAttributeType')
 Benefit = get_model('offer', 'Benefit')
 logger = logging.getLogger(__name__)
 Product = get_model('catalogue', 'Product')
@@ -342,6 +344,13 @@ class BasketSummaryView(BasketView):
                 'cart_id': basket.id,
                 'products': [translate_basket_line_for_segment(line) for line in basket.all_lines()],
             }
+            attributes = BasketAttribute.objects.filter(
+                basket=basket,
+                attribute_type__name=BUNDLE
+            )
+            if len(attributes) == 1:
+                properties['bundle_id'] = attributes[0].value_text
+
             track_segment_event(request.site, request.user, 'Cart Viewed', properties)
 
             properties = {
@@ -449,9 +458,6 @@ class VoucherAddView(BaseVoucherAddView):  # pylint: disable=function-redefined
             return
 
         # Do not allow single course run coupons used on bundles.
-        BUNDLE = 'bundle_identifier'
-        BasketAttribute = get_model('basket', 'BasketAttribute')
-        BasketAttributeType = get_model('basket', 'BasketAttributeType')
         bundle_attribute = BasketAttribute.objects.filter(
             basket=self.request.basket,
             attribute_type=BasketAttributeType.objects.get(name=BUNDLE)
