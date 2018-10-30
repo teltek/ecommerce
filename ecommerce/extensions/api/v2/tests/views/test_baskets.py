@@ -328,6 +328,21 @@ class BasketViewSetTests(AccessTokenMixin, ThrottlingMixin, TestCase):
         self.assertIsNotNone(content['results'][0]['vouchers'])
         self.assertEqual(content['results'][0]['payment_status'], "Accepted")
 
+    def test_voucher_errors(self):
+        """ Test data when voucher error happen"""
+        basket = BasketFactory(site=self.site)
+        voucher, product = prepare_voucher(code='test101')
+        basket.vouchers.add(voucher)
+        basket.add_product(product)
+
+        with mock.patch.object(Basket, 'vouchers', side_effect=ValueError):
+            response = self.client.get(self.path, HTTP_AUTHORIZATION=self.token)
+            self.assertEquals(json.loads(response.content)['results'][0]['vouchers'], [])
+
+        with mock.patch.object(Basket, 'vouchers', side_effect=AttributeError):
+            response = self.client.get(self.path, HTTP_AUTHORIZATION=self.token)
+            self.assertEquals(json.loads(response.content)['results'][0]['vouchers'], [])
+
 
 class OrderByBasketRetrieveViewTests(OrderDetailViewTestMixin, TestCase):
     """Test cases for getting orders using the basket id. """
