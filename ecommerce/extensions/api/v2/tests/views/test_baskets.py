@@ -335,13 +335,13 @@ class BasketViewSetTests(AccessTokenMixin, ThrottlingMixin, TestCase):
         basket.vouchers.add(voucher)
         basket.add_product(product)
 
-        with mock.patch.object(Basket, 'vouchers', side_effect=ValueError):
+        with mock.patch('ecommerce.extensions.api.serializers.VoucherSerializer', side_effect=ValueError):
             response = self.client.get(self.path, HTTP_AUTHORIZATION=self.token)
-            self.assertEquals(json.loads(response.content)['results'][0]['vouchers'], [])
+            self.assertIsNone(json.loads(response.content)['results'][0]['vouchers'])
 
-        with mock.patch.object(Basket, 'vouchers', side_effect=AttributeError):
+        with mock.patch('ecommerce.extensions.api.serializers.VoucherSerializer', side_effect=AttributeError):
             response = self.client.get(self.path, HTTP_AUTHORIZATION=self.token)
-            self.assertEquals(json.loads(response.content)['results'][0]['vouchers'], [])
+            self.assertIsNone(json.loads(response.content)['results'][0]['vouchers'])
 
 
 class OrderByBasketRetrieveViewTests(OrderDetailViewTestMixin, TestCase):
