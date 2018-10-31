@@ -1,4 +1,3 @@
-import json
 import logging
 
 from django.db.models import Q
@@ -125,20 +124,23 @@ class FulfillFrozenBaskets(EdxOrderPlacementMixin):
             if len(unique_transaction_ids) > 1:
                 logger.warning('Basket %d has more than one successful transaction id, using the first one', basket_id)
 
-            successful_payment_notification = successful_transaction[0]
+            payment_notification = successful_transaction[0]
 
-            self.payment_processor = _get_payment_processor(site, successful_payment_notification.processor_name)
+            if payment_notification.transaction_id.startswith('PAY'):
+                card_number = 'Paypal Account'
+                card_type = None
+            else:
+                card_number = payment_notification.response['req_card_number']
+                card_type = CYBERSOURCE_CARD_TYPE_MAP.get(response.response['req_card_type'])
+
+            self.payment_processor = _get_payment_processor(site, payment_notification.processor_name)
             # Create handled response
             handled_response = HandledProcessorResponse(
-                transaction_id=successful_payment_notification.transaction_id,
+                transaction_id=payment_notification.transaction_id,
                 total=basket.total_excl_tax,
                 currency=basket.currency,
-                card_number=json.loads(successful_payment_notification.response).get(
-                    'req_card_number', 'Paypal Account'
-                ),
-                card_type=CYBERSOURCE_CARD_TYPE_MAP.get(
-                    json.loads(successful_payment_notification.response).get('req_card_type'), None
-                )
+                card_number=card_number,
+                card_type=card_type
             )
 
             # Record Payment and try to place order
